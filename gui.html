@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kokoro TTS Generator - Unlimited Text</title>
+    <style>
+        :root {
+            --bg-primary: #1a2332;
+            --bg-secondary: #ffffff;
+            --bg-panel: #f8f9fa;
+            --text-primary: #333333;
+            --text-secondary: #495057;
+            --text-muted: #6c757d;
+            --border-color: #e9ecef;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a2332;
+            --bg-secondary: #2a3847;
+            --bg-panel: #1e2936;
+            --text-primary: #e8eaed;
+            --text-secondary: #bdc1c6;
+            --text-muted: #9aa0a6;
+            --border-color: #3c4859;
+            --shadow: rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            transition: background 0.3s ease;
+        }
+        .container {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+        h1 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            transition: color 0.3s ease;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+        .settings-panel {
+            background: var(--bg-panel);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            transition: background 0.3s ease;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .setting-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        select:focus, input[type="range"]:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        textarea:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 25px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .progress {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background-color: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .model-loading-progress {
+            width: 80%;
+            margin: 20px auto;
+        }
+        audio {
+            width: 100%;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        .hidden {
+            display: none;
+        }
+        .quality-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+        .voice-preview {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 16px;
+        }
+        .info-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 180px;
+            height: 70px;
+            background: var(--bg-panel);
+            border: 3px solid var(--border-color);
+            border-radius: 35px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+        
+        .theme-slider {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        body.dark-mode .theme-slider {
+            transform: translateX(110px);
+        }
+        
+        .theme-icons {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .theme-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: opacity 0.3s ease;
+        }
+        
+        .sun-icon {
+            opacity: 1;
+        }
+        
+        .moon-icon {
+            opacity: 0.5;
+        }
+        
+        body.dark-mode .sun-icon {
+            opacity: 0.5;
+        }
+        
+        body.dark-mode .moon-icon {
+            opacity: 1;
+        }
+        
+        /* File Upload Styles */
+        .file-upload-section {
+            margin-bottom: 20px;
+        }
+        
+        .file-upload-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .file-upload-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg-panel);
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            transition: background 0.3s ease;
+        }
+        
+        .file-info-text {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .file-info-meta {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .remove-file {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 2px 8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s ease;
+        }
+        
+        .remove-file:hover {
+            background: #c82333;
+        }
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="theme-toggle" id="themeToggle">
+        <div class="theme-slider"></div>
+        <div class="theme-icons">
+            <div class="theme-icon sun-icon">☀️</div>
+            <div class="theme-icon moon-icon">🌙</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>🎵 Kokoro TTS Generator</h1>
+        <div class="info-badge">✨ Unlimited Text Support - Auto-chunking enabled</div>
+        
+        <div id="loading" class="loading">
+            <p>Loading voices... Please wait</p>
+        </div>
+        
+        <div id="mainContent" class="hidden">
+            <div class="settings-panel">
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="voiceSelect">Voice Style:</label>
+                        <select id="voiceSelect"></select>
+                        <div class="voice-preview" id="voicePreview">Select a voice to see description</div>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="qualitySelect">Output Quality:</label>
+                        <select id="qualitySelect">
+                            <option value="fast">Fast (Lower Quality)</option>
+                            <option value="balanced" selected>Balanced</option>
+                            <option value="high">High Quality</option>
+                            <option value="premium">Premium (Best Quality)</option>
+                        </select>
+                        <div class="quality-indicator">
+                            <span>Faster</span>
+                            <span>Better Quality</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="file-upload-section">
+                <label class="file-upload-label">
+                    📄 Upload Text File (.txt)
+                    <input type="file" id="fileInput" accept=".txt,.text" style="display: none;">
+                </label>
+                <div id="fileInfo" class="file-info hidden"></div>
+            </div>
+            
+            <textarea id="textInput" placeholder="Enter unlimited text to convert to speech, or upload a .txt file above... The text will be automatically split into chunks and concatenated.">Hello! This is a test of the Kokoro TTS with unlimited text support. You can now enter as much text as you want, and the system will automatically split it into manageable chunks, generate audio for each chunk, and then seamlessly concatenate them together into a single audio file. This allows you to generate speech for entire articles, stories, or documents without any length limitations!</textarea>
+            
+            <div class="controls">
+                <button id="generateBtn">Generate Speech</button>
+                <button id="downloadBtn" disabled>Download WAV</button>
+                <button id="playBtn" disabled>Play Audio</button>
+            </div>
+            
+            <div class="progress-bar-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            
+            <div id="status" class="status hidden"></div>
+            
+            <audio id="audioPlayer" controls class="hidden"></audio>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Selected Voice</div>
+                    <div class="stat-value" id="currentVoice">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Quality Level</div>
+                    <div class="stat-value" id="currentQuality">Balanced</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Text Length</div>
+                    <div class="stat-value" id="textLength">0 chars</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Voices</div>
+                    <div class="stat-value" id="totalVoices">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class KokoroTTSGUI {
+            constructor() {
+                this.textInput = document.getElementById('textInput');
+                this.voiceSelect = document.getElementById('voiceSelect');
+                this.qualitySelect = document.getElementById('qualitySelect');
+                this.generateBtn = document.getElementById('generateBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.playBtn = document.getElementById('playBtn');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.status = document.getElementById('status');
+                this.voicePreview = document.getElementById('voicePreview');
+                this.currentVoice = document.getElementById('currentVoice');
+                this.currentQuality = document.getElementById('currentQuality');
+                this.textLength = document.getElementById('textLength');
+                this.totalVoices = document.getElementById('totalVoices');
+                this.loading = document.getElementById('loading');
+                this.mainContent = document.getElementById('mainContent');
+                this.progressContainer = document.getElementById('progressContainer');
+                this.progressBar = document.getElementById('progressBar');
+                this.themeToggle = document.getElementById('themeToggle');
+                this.fileInput = document.getElementById('fileInput');
+                this.fileInfo = document.getElementById('fileInfo');
+                
+                this.audioData = null;
+                this.audioUrl = null;
+                this.availableVoices = {};
+                this.voiceCategories = {};
+                this.uploadedFileName = null;
+                this.modelStatus = {};
+                
+                this.initializeEventListeners();
+                this.loadVoicesAndSettings();
+                this.loadTheme();
+            }
+            
+            initializeEventListeners() {
+                this.generateBtn.addEventListener('click', () => this.generateSpeech());
+                this.downloadBtn.addEventListener('click', () => this.downloadAudio());
+                this.playBtn.addEventListener('click', () => this.playAudio());
+                this.themeToggle.addEventListener('click', () => this.toggleTheme());
+                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+                
+                this.textInput.addEventListener('input', () => {
+                    this.updateTextLength();
+                    this.generateBtn.disabled = !this.textInput.value.trim();
+                });
+                
+                this.voiceSelect.addEventListener('change', () => {
+                    this.updateVoicePreview();
+                    this.updateStats();
+                });
+                
+                this.qualitySelect.addEventListener('change', () => {
+                    this.updateStats();
+                });
+            }
+            
+            async handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // Check file type
+                if (!file.name.toLowerCase().endsWith('.txt')) {
+                    this.showStatus('Please upload a .txt file only', 'error');
+                    this.fileInput.value = '';
+                    return;
+                }
+                
+                // Check file size (50MB max)
+                if (file.size > 50 * 1024 * 1024) {
+                    this.showStatus('File is too large. Maximum size is 50MB', 'error');
+                    this.fileInput.value = '';
+                    return;
+                }
+                
+                this.showStatus('Reading file...', 'info');
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('voice', this.voiceSelect.value);
+                    formData.append('quality', this.qualitySelect.value);
+                    
+                    const response = await fetch('/upload-file', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to upload file');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Update textarea with file content
+                    this.textInput.value = result.text;
+                    this.uploadedFileName = result.filename;
+                    this.updateTextLength();
+                    this.generateBtn.disabled = false;
+                    
+                    // Show file info
+                    this.fileInfo.innerHTML = `
+                        <div class="file-info-text">
+                            📄 <strong>${result.filename}</strong>
+                            <span class="remove-file" onclick="window.ttsApp.clearFile()">✕ Remove</span>
+                        </div>
+                        <div class="file-info-meta">
+                            ${result.length.toLocaleString()} characters loaded
+                        </div>
+                    `;
+                    this.fileInfo.classList.remove('hidden');
+                    
+                    this.showStatus(`File loaded successfully: ${result.filename}`, 'success');
+                    setTimeout(() => this.hideStatus(), 3000);
+                    
+                } catch (error) {
+                    console.error('File upload error:', error);
+                    this.showStatus(`Error: ${error.message}`, 'error');
+                    this.fileInput.value = '';
+                }
+            }
+            
+            clearFile() {
+                this.fileInput.value = '';
+                this.fileInfo.classList.add('hidden');
+                this.textInput.value = 'Hello! This is a test of the Kokoro TTS with unlimited text support. You can now enter as much text as you want, and the system will automatically split it into manageable chunks, generate audio for each chunk, and then seamlessly concatenate them together into a single audio file. This allows you to generate speech for entire articles, stories, or documents without any length limitations!';
+                this.uploadedFileName = null;
+                this.updateTextLength();
+                this.showStatus('File removed', 'info');
+                setTimeout(() => this.hideStatus(), 2000);
+            }
+            
+            loadTheme() {
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                if (savedTheme === 'light') {
+                    document.body.classList.remove('dark-mode');
+                } else {
+                    document.body.classList.add('dark-mode');
+                }
+            }
+            
+            toggleTheme() {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            }
+            
+            async loadVoicesAndSettings() {
+                try {
+                    this.showStatus('Loading available voices...', 'info');
+
+                    // First, check model status
+                    await this.checkModelStatus();
+
+                    const response = await fetch('/settings');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const settings = await response.json();
+
+                    this.availableVoices = settings.voices || {};
+                    this.voiceCategories = settings.voiceCategories || {};
+                    this.modelStatus = settings.modelStatus || {};
+
+                    console.log('Loaded settings:', settings);
+
+                    // Handle model loading status
+                    if (this.modelStatus.loading) {
+                        await this.monitorModelLoading();
+                        return; // monitorModelLoading will recursively call this function once loading is complete
+                    }
+
+                    if (Object.keys(this.availableVoices).length === 0) {
+                        throw new Error('No voices available');
+                    }
+
+                    this.populateVoiceDropdown();
+                    this.updateStats();
+
+                    this.loading.classList.add('hidden');
+                    this.mainContent.classList.remove('hidden');
+
+                    this.showStatus(`Successfully loaded ${Object.keys(this.availableVoices).length} voices`, 'success');
+                    setTimeout(() => this.hideStatus(), 3000);
+
+                } catch (error) {
+                    console.error('Error loading settings:', error);
+                    this.showStatus('Error loading voices. Using default voices.', 'error');
+
+                    this.loadDefaultVoices();
+
+                    this.loading.classList.add('hidden');
+                    this.mainContent.classList.remove('hidden');
+
+                    setTimeout(() => this.hideStatus(), 5000);
+                }
+            }
+            
+            populateVoiceDropdown() {
+                this.voiceSelect.innerHTML = '';
+                
+                if (this.voiceCategories && Object.keys(this.voiceCategories).length > 0) {
+                    this.addVoicesFromCategories();
+                } else {
+                    this.addAllVoices();
+                }
+                
+                if (this.voiceSelect.options.length > 0) {
+                    this.voiceSelect.value = Object.keys(this.availableVoices)[0];
+                    this.updateVoicePreview();
+                }
+            }
+            
+            addVoicesFromCategories() {
+                const categoryOrder = [
+                    'us_female_premium', 'us_female_good', 'us_female_basic',
+                    'us_male_good', 'us_male_basic', 
+                    'uk_female', 'uk_male', 'other'
+                ];
+                
+                const categoryLabels = {
+                    'us_female_premium': '🇺🇸 US English Female (Premium)',
+                    'us_female_good': '🇺🇸 US English Female (Good Quality)',
+                    'us_female_basic': '🇺🇸 US English Female (Basic)',
+                    'us_male_good': '🇺🇸 US English Male (Good Quality)',
+                    'us_male_basic': '🇺🇸 US English Male (Basic)',
+                    'uk_female': '🇬🇧 UK English Female',
+                    'uk_male': '🇬🇧 UK English Male',
+                    'other': 'Other Voices'
+                };
+                
+                categoryOrder.forEach(category => {
+                    if (this.voiceCategories[category] && this.voiceCategories[category].length > 0) {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = categoryLabels[category] || category;
+                        
+                        this.voiceCategories[category].forEach(voice => {
+                            const option = document.createElement('option');
+                            option.value = voice.id;
+                            option.textContent = voice.name;
+                            option.setAttribute('data-description', voice.description || `Voice: ${voice.id}`);
+                            optgroup.appendChild(option);
+                        });
+                        
+                        this.voiceSelect.appendChild(optgroup);
+                    }
+                });
+            }
+            
+            addAllVoices() {
+                Object.keys(this.availableVoices).forEach(voiceId => {
+                    const option = document.createElement('option');
+                    option.value = voiceId;
+                    option.textContent = this.availableVoices[voiceId];
+                    this.voiceSelect.appendChild(option);
+                });
+            }
+            
+            async checkModelStatus() {
+                try {
+                    const response = await fetch('/health');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const health = await response.json();
+                    this.modelStatus = health.modelStatus || {};
+                } catch (error) {
+                    console.error('Error checking model status:', error);
+                }
+            }
+
+            async monitorModelLoading() {
+                // Show loading screen with progress
+                this.loading.innerHTML = `
+                    <div style="text-align: center;">
+                        <h3>🔧 Loading Model...</h3>
+                        <p>${this.modelStatus.message || 'Initializing...'}</p>
+                        <div class="progress-bar-container" style="display: block; margin: 20px auto; width: 80%;">
+                            <div class="progress-bar" id="modelProgressBar" style="width: ${this.modelStatus.progress || 0}%">${this.modelStatus.progress || 0}%</div>
+                        </div>
+                        <p>Please wait while the model downloads and initializes...</p>
+                    </div>
+                `;
+
+                // Poll for model status updates
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch('/health');
+                        if (!response.ok) return;
+
+                        const health = await response.json();
+                        this.modelStatus = health.modelStatus || {};
+
+                        // Update the progress bar
+                        const progressBar = document.getElementById('modelProgressBar');
+                        if (progressBar) {
+                            progressBar.style.width = (this.modelStatus.progress || 0) + '%';
+                            progressBar.textContent = Math.round(this.modelStatus.progress || 0) + '%';
+                        }
+
+                        // Check if model is loaded
+                        if (!this.modelStatus.loading) {
+                            clearInterval(pollInterval);
+
+                            // Reload the voices and settings now that the model is ready
+                            this.loadVoicesAndSettings();
+                        }
+                    } catch (error) {
+                        console.error('Error polling model status:', error);
+                    }
+                }, 1000); // Poll every second
+            }
+
+            loadDefaultVoices() {
+                this.availableVoices = {
+                    'af_heart': 'Heart ❤️ (Premium)',
+                    'af_bella': 'Bella 🔥 (Premium)',
+                    'af_alloy': 'Alloy',
+                    'am_fenrir': 'Fenrir',
+                    'am_michael': 'Michael',
+                    'bf_emma': 'Emma 🚺 (Good)',
+                    'bm_george': 'George (Good)'
+                };
+
+                this.populateVoiceDropdown();
+            }
+            
+            updateVoicePreview() {
+                const selectedOption = this.voiceSelect.options[this.voiceSelect.selectedIndex];
+                const description = selectedOption.getAttribute('data-description') || 'Voice description not available';
+                this.voicePreview.textContent = description;
+            }
+            
+            updateStats() {
+                const voiceText = this.voiceSelect.options[this.voiceSelect.selectedIndex].text;
+                const qualityText = this.qualitySelect.options[this.qualitySelect.selectedIndex].text;
+                
+                this.currentVoice.textContent = voiceText;
+                this.currentQuality.textContent = qualityText;
+                this.totalVoices.textContent = Object.keys(this.availableVoices).length;
+            }
+            
+            updateTextLength() {
+                const length = this.textInput.value.length;
+                this.textLength.textContent = `${length.toLocaleString()} chars`;
+                
+                if (length > 5000) {
+                    this.textLength.style.color = '#28a745';
+                } else if (length > 2000) {
+                    this.textLength.style.color = '#ffc107';
+                } else {
+                    this.textLength.style.color = '#667eea';
+                }
+            }
+            
+            showProgress(percent) {
+                this.progressContainer.style.display = 'block';
+                this.progressBar.style.width = percent + '%';
+                this.progressBar.textContent = Math.round(percent) + '%';
+            }
+            
+            hideProgress() {
+                this.progressContainer.style.display = 'none';
+            }
+            
+            async generateSpeech() {
+                const text = this.textInput.value.trim();
+                if (!text) {
+                    this.showStatus('Please enter some text', 'error');
+                    return;
+                }
+
+                // Check if model is still loading
+                await this.checkModelStatus();
+                if (this.modelStatus && this.modelStatus.loading) {
+                    this.showStatus('Model is still loading. Please wait...', 'error');
+                    return;
+                }
+
+                const voice = this.voiceSelect.value;
+                const quality = this.qualitySelect.value;
+
+                this.showStatus('Generating speech (processing chunks)...', 'progress');
+                this.showProgress(0);
+                this.generateBtn.disabled = true;
+                this.downloadBtn.disabled = true;
+                this.playBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            voice: voice,
+                            quality: quality
+                        })
+                    });
+
+                    if (response.status === 503) { // Service Unavailable - model still loading
+                        const errorData = await response.json().catch(() => ({}));
+                        this.showStatus(errorData.error || 'Model is still loading. Please try again later.', 'error');
+                        this.hideProgress();
+                        this.generateBtn.disabled = false;
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    this.showProgress(50);
+                    this.showStatus('Receiving audio data...', 'progress');
+
+                    const audioBlob = await response.blob();
+                    this.audioData = audioBlob;
+                    this.audioUrl = URL.createObjectURL(audioBlob);
+
+                    this.showProgress(100);
+
+                    this.audioPlayer.src = this.audioUrl;
+                    this.audioPlayer.classList.remove('hidden');
+
+                    this.downloadBtn.disabled = false;
+                    this.playBtn.disabled = false;
+
+                    const fileSize = (audioBlob.size / 1024 / 1024).toFixed(2);
+                    this.showStatus(`Speech generated successfully! (${fileSize} MB - Voice: ${this.currentVoice.textContent})`, 'success');
+
+                    setTimeout(() => this.hideProgress(), 2000);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showStatus(`Error: ${error.message}`, 'error');
+                    this.hideProgress();
+                } finally {
+                    this.generateBtn.disabled = false;
+                }
+            }
+            
+            downloadAudio() {
+                if (!this.audioData) return;
+                
+                const url = this.audioUrl;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `kokoro-${this.voiceSelect.value}-${this.qualitySelect.value}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                this.showStatus('Download started!', 'success');
+            }
+            
+            playAudio() {
+                if (this.audioPlayer.paused) {
+                    this.audioPlayer.play();
+                    this.playBtn.textContent = 'Pause Audio';
+                    this.audioPlayer.onended = () => {
+                        this.playBtn.textContent = 'Play Audio';
+                    };
+                } else {
+                    this.audioPlayer.pause();
+                    this.playBtn.textContent = 'Play Audio';
+                }
+            }
+            
+            showStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+                this.status.classList.remove('hidden');
+            }
+            
+            hideStatus() {
+                this.status.classList.add('hidden');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            window.ttsApp = new KokoroTTSGUI();
+        });
+    </script>
+</body>
+</html>

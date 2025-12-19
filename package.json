@@ -1,0 +1,48 @@
+{
+  "name": "kokoro-tts-web",
+  "version": "1.0.0",
+  "description": "Web-based Text-to-Speech using Kokoro-82M with unlimited text support",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "gui": "node server.js",
+    "build": "pkg . --targets node18-win-x64 --output dist/kokoro-tts-win.exe --compress GZip",
+    "build:all": "pkg . --targets node18-win-x64,node18-macos-x64,node18-linux-x64 --out-path dist --compress GZip"
+  },
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "kokoro",
+    "gui",
+    "speech-synthesis",
+    "voice-generation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "kokoro-js": "^1.2.1",
+    "onnxruntime-node": "^1.23.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "gui.html",
+      "node_modules/**/*.node",
+      "node_modules/onnxruntime-node/**/*",
+      "node_modules/kokoro-js/**/*",
+      "node_modules/@huggingface/**/*"
+    ],
+    "scripts": [
+      "node_modules/kokoro-js/**/*.js"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "dist"
+  }
+}
