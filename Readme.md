@@ -2,6 +2,10 @@
 
 A powerful web-based Text-to-Speech application using the Kokoro-82M model with unlimited text support and smart audio chunking.
 
+<p align="center">
+<img width="480" height="395" alt="image" src="https://github.com/user-attachments/assets/f0733074-a156-4c86-a11c-2182485e99bb" />
+</p>
+
 ## Features
 
 ✨ **Unlimited Text Input** - Generate speech for texts of any length  
